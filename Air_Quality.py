@@ -1,17 +1,34 @@
-Air Quality Analysis Project
+# ==========================================================
+# Air Quality Analysis Project
+# ==========================================================
+
+"""
 1. Project Description
-This project analyzes the Air Quality UCI dataset, which contains hourly responses of an array of chemical sensors 
-deployed in a polluted Italian city. The goal is to clean, prepare, and explore the dataset, generate visualizations, and summarize insights with recommendations for end users.
+----------------------
+This project analyzes the Air Quality UCI dataset, which contains hourly responses 
+of an array of chemical sensors deployed in a polluted Italian city. 
+The goal is to clean, prepare, and explore the dataset, generate visualizations, 
+and summarize insights with recommendations for end users.
+"""
+
+"""
 2. System Requirement Specification (SRS)
-Language: Python 3.x  
-Libraries: pandas, numpy, matplotlib, seaborn  
-Environment: Jupyter Notebook  
-Inputs: AirQualityUCI.csv dataset  
-Outputs: Cleaned dataset, plots, and summary insights  
-3. Load the dataset
+-----------------------------------------
+Language: Python 3.x
+Libraries: pandas, numpy, matplotlib, seaborn, scikit-learn
+Environment: Jupyter Notebook or Python script
+Inputs: AirQualityUCI.csv dataset
+Outputs: Cleaned dataset, plots, and summary insights
+"""
+
+# ==========================================================
+# 3. Load the dataset
+# ==========================================================
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+
 df = pd.read_csv("AirQualityUCI.csv", sep=';', decimal=',', low_memory=False)
 
 # Combine Date + Time into single Datetime column
@@ -24,32 +41,43 @@ df['Datetime'] = pd.to_datetime(
 # Drop rows where Datetime failed to parse 
 df = df.dropna(subset=['Datetime'])
 
-# Sorting by datetime 
+# Sort by datetime 
 df = df.sort_values('Datetime')
 
-# drop completely empty columns 
+# Drop completely empty columns 
 df = df.dropna(axis=1, how='all')
 
-df.head()
-4. Data Preparation
+print(df.head())
+
+# ==========================================================
+# 4. Data Preparation
+# ==========================================================
+
 # Drop empty unnamed columns
 df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
 
-# Clean column names (eg: spaces, special characters)
+# Clean column names
 df.columns = df.columns.str.strip().str.replace("ï»¿", "", regex=False)
 
 # Replace -200 with NaN
 df = df.replace(-200, np.nan)
 
 print(df.head())
-5. Exploratory Data Analysis (EDA)
+
+# ==========================================================
+# 5. Exploratory Data Analysis (EDA)
+# ==========================================================
+
 num_cols = df.columns.drop(["Date", "Time"], errors="ignore")
 df[num_cols] = df[num_cols].apply(pd.to_numeric, errors="coerce")
 
 print("Missing Values per Column:\n", df.isna().sum())
 print("\nDescriptive Statistics (numeric columns):\n", df.describe())
 
-6. Visualizations
+# ==========================================================
+# 6. Visualizations
+# ==========================================================
+
 # Time series of CO(GT)
 plt.figure(figsize=(12,5))
 plt.plot(df['Datetime'], df['CO(GT)'], label="CO (GT)")
@@ -66,7 +94,7 @@ plt.xlabel("NO2(GT)")
 plt.ylabel("Frequency")
 plt.show()
 
-# Hi
+# Multiple histograms
 plt.figure(figsize=(15,4))
 for i, col in enumerate(['CO(GT)','NOx(GT)','NO2(GT)']):
     plt.subplot(1, 3, i+1)
@@ -83,9 +111,14 @@ plt.title("CO vs NOx")
 plt.xlabel("CO(GT)")
 plt.ylabel("NOx(GT)")
 plt.show()
-7. Regression analysis
+
+# ==========================================================
+# 7. Regression analysis
+# ==========================================================
+
 import warnings
 warnings.filterwarnings("ignore", category=RuntimeWarning)
+
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import StandardScaler
@@ -94,47 +127,59 @@ from sklearn.metrics import mean_squared_error, r2_score
 features = ["T", "RH", "AH"]
 pollutants = ["CO(GT)", "NO2(GT)", "C6H6(GT)"]
 
-# clean dataset
+# Clean dataset
 df_model = df[features + pollutants].apply(pd.to_numeric, errors="coerce")
 df_model.replace([np.inf, -np.inf], np.nan, inplace=True)
 df_model.dropna(inplace=True)
+
 X = df_model[features]
 y = df_model[pollutants]
 
-# scale features
+# Scale features
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
 
-# train-test split
+# Train-test split
 X_train, X_test, y_train, y_test = train_test_split(
     X_scaled, y, test_size=0.2, random_state=42
 )
 
-# training Linear Regression model
+# Train Linear Regression model
 model = LinearRegression()
 model.fit(X_train, y_train)
 
-# predictions
+# Predictions
 y_pred = model.predict(X_test)
 
-# evaluation
+# Evaluation
 print("MSE:", mean_squared_error(y_test, y_pred))
 print("R²:", r2_score(y_test, y_pred, multioutput="uniform_average"))
 
-# actual vs predicted
+# Actual vs Predicted sample
 actual = y_test.reset_index(drop=True)[pollutants].add_prefix("Actual_")
 predicted = pd.DataFrame(y_pred, columns=[f"Pred_{c}" for c in pollutants])
-
 sample = pd.concat([actual, predicted], axis=1)
 
 print("\nSample Actual vs Pred:")
 print(sample.head(8))
-8. Summary & Recommendations
-Data Quality: Dataset contains many missing/invalid values that need imputation or removal.  
- Pollution Trends:  
-    CO and NOx levels show strong correlation, likely from traffic emissions.  
-    Pollutants show clear daily and weekly patterns (higher during weekdays, lower on weekends).  
- Recommendations:  
-    Apply interpolation or model-based imputation for missing data.  
-    Use these insights for air pollution control policies, such as traffic restrictions during peak hours.  
-    Deploy predictive models to forecast air quality and issue public health advisories.  
+
+# ==========================================================
+# 8. Summary & Recommendations
+# ==========================================================
+
+"""
+Data Quality:
+-------------
+- Dataset contains many missing/invalid values that need imputation or removal.
+
+Pollution Trends:
+-----------------
+- CO and NOx levels show strong correlation, likely from traffic emissions.
+- Pollutants show clear daily and weekly patterns (higher during weekdays, lower on weekends).
+
+Recommendations:
+----------------
+- Apply interpolation or model-based imputation for missing data.
+- Use these insights for air pollution control policies, such as traffic restrictions during peak hours.
+- Deploy predictive models to forecast air quality and issue public health advisories.
+"""
